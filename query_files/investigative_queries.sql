@@ -367,51 +367,131 @@ ORDER BY 5 DESC, 3 ASC;
 SELECT * FROM quarterly_summary;
 
 
+-- CREATE STORED PROCEDURE
+-- create test db
+-- truncate db
+-- extract data 
 
--- most popular films, average rent times
+-- create
+CREATE TABLE query_detailed_test AS
+SELECT * FROM quarterly_detailed_report LIMIT 10;
 
--- 'ROUGH DRAFT'
--- very in-effecient but just getting ideas 
-/*
-SELECT 
-	ROUND(CASE 
-		  	WHEN times_returned_late != 0 THEN (times_returned_late::NUMERIC / times_rented)
-		  	ELSE 0
-		  END, 2) * 100 AS percentage_returned_late, *
-FROM (
-SELECT 
-	COUNT(film_id)  times_rented,
-	(SELECT COUNT(*) FROM quarterly_detailed_report  WHERE rental_rate < amount_paid AND film_id = q.film_id) times_returned_late,
-	(SELECT ROUND(AVG(days_rented - rental_duration::NUMERIC), 0) FROM quarterly_detailed_report WHERE rental_rate < amount_paid AND film_id = q.film_id) average_days_returned_late,
-	ROUND(AVG(days_rented), 0) average_days_rented,
-	ROUND(AVG(days_rented), 0)
-	title,
-	genre_name,
-	release_year,
-	length,
-	rating
-FROM quarterly_detailed_report q
-GROUP BY film_id, title, genre_name, release_year, length, rating ) s ; */
+CREATE TABLE quarterly_summary_test AS 
+SELECT * FROM quarterly_summary LIMIT 10;
+
+-- test select
+SELECT * FROM query_detailed_test;
+SELECT * FROM quarterly_summary_test;
+
+-- truncate
+TRUNCATE TABLE query_detailed_test;
+TRUNCATE TABLE quarterly_summary_test;
+
+CREATE OR REPLACE PROCEDURE q_detailed_extract()
+LANGUAGE plpgsql
+AS $$
+BEGIN
+	-- truncate
+	TRUNCATE TABLE query_detailed_test;
+	TRUNCATE TABLE quarterly_summary_test;
 	
+	-- detailed
+	INSERT INTO query_detailed_test
+		SELECT 
+			rental.rental_id,
+			store_id,
+			category.category_id,
+			f.film_id,
+			f.title,
+			category.name AS genre_name,
+			f.release_year,
+			f.length,
+			f.rating,
+			f.rental_rate,
+			payment.amount AS amount_paid,
+			f.rental_duration,
+			rented_days_elapsed(return_date - rental_date) AS days_rented
+		FROM category
+			JOIN film_category ON category.category_id = film_category.category_id
+			JOIN film f ON f.film_id = film_category.film_id
+			JOIN inventory ON f.film_id = inventory.film_id
+			JOIN rental ON inventory.inventory_id = rental.inventory_id
+			JOIN payment ON rental.rental_id = payment.rental_id
+		WHERE 
+			return_date BETWEEN '2005-05-24' AND '2005-08-23' -- test range
+			-- return_date BETWEEN (CURRENT_DATE - INTERVAL '90 days')::DATE AND CURRENT_DATE
+			AND
+			return_date IS NOT NULL;
+	
+	-- summary
+	INSERT INTO quarterly_summary_test 
+		WITH cte AS (
+			SELECT
+				q.film_id,
+				q.genre_name,
+				q.title,
+				q.rental_duration,
+				COUNT(q.film_id) AS times_rented,
+				COUNT(*) FILTER (WHERE q.rental_rate < q.amount_paid) AS times_returned_late,
+				ROUND(AVG(q.days_rented), 0) AS average_days_rented,
+				COALESCE(ROUND(AVG(q.days_rented - q.rental_duration)  FILTER (WHERE q.rental_rate < q.amount_paid), 0), 0) AS average_days_returned_late
+			FROM
+				query_detailed_test q
+			GROUP BY
+				q.film_id, q.title, q.genre_name, q.rental_duration
+		)
+
+		SELECT 
+			*, 
+			ROUND(CASE 
+				  WHEN cte.times_returned_late != 0 THEN (cte.times_returned_late::NUMERIC / cte.times_rented) * 100 
+				  ELSE 0 
+				  END, 2) AS percentage_returned_late
+
+		FROM cte
+		ORDER BY 5 DESC, 3 ASC;	
+			
+END;
+$$;
+
+CALL q_detailed_extract()
+
+SELECT * FROM query_detailed_test;
+SELECT * FROM quarterly_summary_test;
 
 
----
+-- 
 
 
+
+
+-- TRIGGER
+CREATE TRIGGER q_summary_delete
+AFTER DELETE ON quarterly_summary_test
+	FOR EACH ROW
+	
+BEGIN
+	SET 
+---------
+-- correct values for 492, 7 times rented
 
 SELECT * FROM quarterly_detailed_report
-WHERE film_id = 88;
+WHERE rental_id = 4591 OR film_id =492;
 
+SELECT * FROM quarterly_summary
+WHERE film_id = 492;
 
+---------
 
+---------
+-- wrong values for 492, 12 times rented
+SELECT * FROM query_detailed_test
+WHERE rental_id = 4591 OR film_id = 492
+ORDER BY 1 ;
 
--- number of films returned late per film
-SELECT 
-	film_id, 
-	COUNT(*) times_film_returned_late,
-	title,
-	ROUND(AVG(days_rented - rental_duration), 0) average_days_returned_late
-FROM quarterly_detailed_report q
-WHERE rental_rate < amount_paid
-GROUP BY film_id, title;
+SELECT * FROM quarterly_summary_test
+WHERE film_id = 492;
 
+DELETE FROM query_detailed_test
+	WHERE rental_id = 4591;
+--------
