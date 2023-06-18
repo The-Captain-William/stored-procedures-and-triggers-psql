@@ -1,7 +1,10 @@
 
+DROP TABLE quarterly_detailed_report;
+DROP TABLE quarterly_summary;
+
 
 -- INITIALIZE TABLES OR CLEAR TABLES THAT ALREADY EXIST
-CREATE OR REPLACE PROCEDURE q_detailed_extract(earlier_date DATE, later_date DATE)
+CREATE OR REPLACE PROCEDURE quarterly_extraction(earlier_date DATE, later_date DATE)
 LANGUAGE plpgsql
 AS $$
 BEGIN
@@ -31,7 +34,7 @@ BEGIN
 		days_rented SMALLINT
 	);
 
-	CREATE TABLE IF NOT EXISTS quarterly_summary (
+	CREATE TABLE IF NOT EXISTS quarterly_summary_report (
 		film_id INT,
 		genre_name VARCHAR(25),
 		title VARCHAR(255),
@@ -45,7 +48,7 @@ BEGIN
 	
 	-- truncate
 	TRUNCATE TABLE  quarterly_detailed_report;
-	TRUNCATE TABLE  quarterly_summary;	
+	TRUNCATE TABLE  quarterly_summary_report;	
 
 	
 	-- detailed
@@ -97,15 +100,17 @@ BEGIN
 	This could also be resolved if quarterly_summary was a materialized view. 
 	*/
     IF film_id_param = -1 THEN
-        TRUNCATE quarterly_summary;
-    ELSE 
-		DELETE FROM quarterly_summary
-		WHERE quarterly_summary.film_id = film_id_param;
+        TRUNCATE quarterly_summary_report;
+		
+    ELSEIF film_id_param != -1 THEN
+		DELETE FROM quarterly_summary_report
+		WHERE quarterly_summary_report.film_id = film_id_param;
+	
 	END IF;
 	
 
     -- Insert data into quarterly_summary
-    INSERT INTO quarterly_summary 
+    INSERT INTO quarterly_summary_report
     WITH cte AS (
         SELECT
             q.film_id,
@@ -141,7 +146,8 @@ CALL q_summary_extract(1000)
 
 SELECT * FROM quarterly_detailed_report;
 
-
+-- F.1; FUNCTION FOR PGAGENT
+CALL quarterly_extraction((CURRENT_DATE - INTERVAL '90 days')::DATE, CURRENT_DATE);
 
 
 
