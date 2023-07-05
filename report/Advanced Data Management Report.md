@@ -3,8 +3,16 @@ This repo was for an assignment I had in my Advanced Data Management class at WG
 The goal was to create a series of tables for the dvdrental data set: One called summary and one called detailed. 
 The detailed table contains a collection of granular datapoints needed for a potential real-world business report, and the summary table contains aggrigates. 
 
+_detailed_
+![detailed](/report/images/detailed.JPG)
+
+_summary_
+![summary](/report/images/summary.JPG)
+
 The catch? I can't use materialized views, and the tables should automatically refresh and recalculate when the tables are modified in any way.
 For this I created a series of stored procedures and triggers.
+
+![flow](/report/images/automated-workflow-diagram.JPG)
 
 The way that this works is that I can use the `quarterly_extraction` procedure to either create and fill the tables, or truncate and fill the tables depending on how its called. 
 
