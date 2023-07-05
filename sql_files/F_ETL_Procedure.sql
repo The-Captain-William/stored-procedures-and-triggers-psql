@@ -1,6 +1,6 @@
 
 DROP TABLE quarterly_detailed_report;
-DROP TABLE quarterly_summary;
+DROP TABLE quarterly_summary_report;
 
 
 -- INITIALIZE TABLES OR CLEAR TABLES THAT ALREADY EXIST
@@ -11,7 +11,7 @@ BEGIN
 	/*
 	Earlier date, later date are the specified start/stop times that create the time range.
 	
-	-- TEST Ranges: '2005-05-24' AND '2005-08-23'
+	-- TEST Ranges: '2005-05-24' AND '2005-08-23'96
 	-- PRODUCTION Ranges: (CURRENT_DATE - INTERVAL '90 days')::DATE AND CURRENT_DATE
 	*/
 	
@@ -50,7 +50,7 @@ BEGIN
 	TRUNCATE TABLE  quarterly_detailed_report;
 	TRUNCATE TABLE  quarterly_summary_report;	
 
-	
+
 	-- detailed
 	INSERT INTO quarterly_detailed_report
 		SELECT 
@@ -102,7 +102,7 @@ BEGIN
     IF film_id_param = -1 THEN
         TRUNCATE quarterly_summary_report;
 		
-    ELSEIF film_id_param != -1 THEN
+    ELSIF film_id_param != -1 THEN
 		DELETE FROM quarterly_summary_report
 		WHERE quarterly_summary_report.film_id = film_id_param;
 	
@@ -132,19 +132,39 @@ BEGIN
         *, 
         CASE 
             WHEN times_rented != 0 THEN ROUND((times_returned_late::NUMERIC / times_rented) * 100, 2)
-            ELSE 0 
+            ELSE 
         END AS percentage_returned_late
     FROM
         cte;
 END;
 $$;
 
+
 -- TEST
-TRUNCATE quarterly_summary;
-SELECT * FROM quarterly_summary;
-CALL q_summary_extract(1000)
+TRUNCATE quarterly_detailed_report;
+TRUNCATE quarterly_summary_report;
+
+
+CALL quarterly_extraction('2005-05-24', '2005-08-23'); 
+
+
 
 SELECT * FROM quarterly_detailed_report;
+SELECT * FROM quarterly_summary_report;
+
+SELECT * FROM quarterly_detailed_report
+WHERE film_id = 1000;
+
+SELECT * FROM quarterly_summary_report
+ORDER BY times_rented DESC
+LIMIT 10;
+
+-- 3 days overdue
+INSERT INTO quarterly_detailed_report
+	VALUES (9999, 2, 5, 1000, 'Zorro Ark', 'Comedy', 2006, 50, 'NC-17', 7.99, 4.99, 3, 6);
+
+
+
 
 -- F.1; FUNCTION FOR PGAGENT
 CALL quarterly_extraction((CURRENT_DATE - INTERVAL '90 days')::DATE, CURRENT_DATE);

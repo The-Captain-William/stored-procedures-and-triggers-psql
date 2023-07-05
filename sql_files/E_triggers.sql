@@ -33,6 +33,7 @@ $$ LANGUAGE plpgsql;
 -- 2. REFRESH CHECKS WHAT SET OFF THE TRIGGER
 -- 3. REFRESH APPLIES PROPER ARGUMENT TO Q_SUMMARY_EXTRACT; THEN FIRES Q_SUMMARY_EXTRACT
 
+
 CREATE OR REPLACE TRIGGER detailed_updated_inserted_or_deleted
 AFTER INSERT OR UPDATE OR DELETE
 ON quarterly_detailed_report
@@ -41,6 +42,6 @@ EXECUTE FUNCTION q_summary_refresh();
 
 
 
-
+CALL q_summary_refresh(1000);
 
 
