@@ -1,7 +1,7 @@
 # What this repo is about
 This repo was for an assignment I had in my Advanced Data Management class at WGU. 
 The goal was to create a series of tables for the dvdrental data set: One called summary and one called detailed. 
-The detailed table contains a collection of granular datapoints needed for a potential real-world business report, and the summary table contains aggrigates. 
+The detailed table contains a collection of granular datapoints needed for a potential real-world business report, and the summary table contains aggregates. 
 
 _detailed_
 ![detailed](/report/images/detailed.JPG)
