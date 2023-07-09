@@ -30,14 +30,13 @@ Below is the original copy of my report.
 	- A.4 Custom transformation needed for the _Detailed_ table in the form of a _User Defined Function_
   	- A.5 Explain the different business uses of the detailed table section and the summary table section of the report.
 	- A.6 Explain how frequently your report should be refreshed to remain relevant to stakeholders.
-
-- B. User Defined Functions (Code [here](/sql_files/B_user_defined_functions.sql))
-- C and D. Queries for creating tables and updating the detailed table (Code [here](/sql_files/C_&_D_create_tables_extract_data_query))
-- E. Trigger for updating the summary table when the detailed table is altered (Code [here](/sql_files/E_triggers.sql))
-- F. Stored Procedures to automate table creation, table truncation, and the ETL process (Code [here](/sql_files/F_ETL_Procedure.sql))
+- B. User Defined Functions (Code [here](sql_files/B_user_defined_function.sql))
+- C and D. Queries for creating tables and updating the detailed table (Code [here](sql_files/C_&_D_create_tables_extract_data_query.sql))
+- E. Trigger for updating the summary table when the detailed table is altered (Code [here](sql_files/E_triggers.sql))
+- F. Stored Procedures to automate table creation, table truncation, and the ETL process (Code [here](sql_files/F_ETL_Procedure.sql))
 
   
-[Code for all Functions, Procedures, and Triggers.](/sql_files)
+[Code for all Functions, Procedures, and Triggers.](sql_files)
 
 ### A.  Summarizing a potential real-world written business report that can be created from the DVD Dataset.
 
@@ -104,7 +103,7 @@ INSERT INTO quarterly_detailed_report
 	...
 	rented_days_elapsed(return_date - rental_date) AS days_rented
 ```
-See the full code [here](/sql_files/F_ETL_Procedure.sql)
+See the full code [here](sql_files/F_ETL_Procedure.sql)
 
 
 The Function in question:
@@ -126,7 +125,7 @@ END;
 $$
 LANGUAGE plpgsql;	
 ```
-To see triggers, and user defined functions, click [here](/sql_files/E_triggers.sql)
+To see triggers, and user defined functions, click [here](sql_files/E_triggers.sql)
 
 #### A.5 Explain the different business uses of the detailed table section and the summary table section of the report.
 
@@ -141,14 +140,14 @@ I would recommend refreshing the report every quarter, which is easy thanks to t
 ### Code for Functions, Procedures, and Triggers.
 
 #### B. User Defined Functions
-The User Defined Function (UDF) for transforming data needed for the `days_rented` column in the detailed table is called `rented_days_elapsed`. Click [here](../sql_files/B_user_defined_function.sql).
+The User Defined Function (UDF) for transforming data needed for the `days_rented` column in the detailed table is called `rented_days_elapsed`. Click [here](sql_files/B_user_defined_function.sql).
 
 #### C and D. Queries for creating tables and updating the detailed table
 The queries for creating both of the tables and filling the 
-Click [here](/sql_files/C_%26_D_create_tables_extract_data_query.sql)
+Click [here](sql_files/C_%26_D_create_tables_extract_data_query.sql)
 
 #### E. Trigger for updating the summary table when the detailed table is altered
-Code for the trigger is found [here](/sql_files/E_triggers.sql). 
+Code for the trigger is found [here](sql_files/E_triggers.sql). 
 
 The trigger `detailed_updated_inserted_or_deleted` calls a wrapper function `q_summary_refresh`  and calls the `q_summary_extract` procedure with the proper argument. 
 The argument is based off of what initiated the trigger, whether it was an `INSERT` `UPDATE` or `DELETE`. 
@@ -156,7 +155,7 @@ The argument is based off of what initiated the trigger, whether it was an `INSE
 I took advantage of the `TG_OP` variable that is automatically created when a trigger is called (Postgres Docs 43.10 and 39.1, 2023). See [[#References]].
 
 #### F. Stored Procedures to automate table creation, table truncation, and the ETL process
-To view the stored procedures, click [here](/sql_files/F_ETL_Procedure.sql)
+To view the stored procedures, click [here](sql_files/F_ETL_Procedure.sql)
 
 > Note 📝 <br>
 > There are two procedures in this file. <br> Calling `quarterly_detailed_report` will automatically set up the tables if they don't exist, perform the ETL process needed for the detailed table, then call `q_summary_extract` to set up the ETL process for the summary table. <br> 
